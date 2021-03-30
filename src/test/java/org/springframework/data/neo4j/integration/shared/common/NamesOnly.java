@@ -26,6 +26,8 @@ public interface NamesOnly {
 
 	String getLastName();
 
+	Person.Address getAddress();
+
 	@Value("#{target.firstName + ' ' + target.lastName}")
 	String getFullName();
 }

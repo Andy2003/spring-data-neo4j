@@ -49,8 +49,10 @@ import org.springframework.data.neo4j.integration.shared.common.ProjectionTestLe
 import org.springframework.data.neo4j.integration.shared.common.ProjectionTestRoot;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
+import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.neo4j.test.Neo4jExtension;
 import org.springframework.data.neo4j.test.Neo4jIntegrationTest;
+import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
@@ -264,6 +266,24 @@ class ProjectionIT {
 		});
 	}
 
+	@Test
+	void findByQueryOneToMany(@Autowired TreestructureRepository repository) {
+		List<ProjectedOneToMany> result = repository.findByQuery("root", ProjectedOneToMany.class);
+		assertThat(result).hasSize(1)
+				.first()
+				.satisfies(root -> assertThat(root.getLevel1())
+						.hasSize(2));
+	}
+
+	@Test
+	void findByQueryOneToOne(@Autowired TreestructureRepository repository) {
+		List<ProjectedOneToOne> result = repository.findByQuery("root", ProjectedOneToOne.class);
+		assertThat(result).hasSize(1)
+				.first()
+				.satisfies(root -> assertThat(root.getOneOone())
+						.isNotNull());
+	}
+
 	@Test // GH-2164
 	void findByIdInDerivedFinderMethodInRelatedObjectShouldWork(@Autowired TreestructureRepository repository) {
 
@@ -301,6 +321,9 @@ class ProjectionIT {
 		Optional<ProjectionTestRoot> findOneByLevel1Id(Long idOfLevel1);
 
 		<T> Optional<T> findOneByLevel1Id(Long idOfLevel1, Class<T> typeOfProjection);
+
+		@Query("MATCH (t:ProjectionTestRoot) WHERE t.name = $name RETURN t")
+		<T> List<T> findByQuery(@Param("name") String name, Class<T> typeOfProjection);
 	}
 
 	interface SimpleProjection {
