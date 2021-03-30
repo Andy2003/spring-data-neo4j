@@ -86,46 +86,7 @@ import org.springframework.data.neo4j.integration.imperative.repositories.Person
 import org.springframework.data.neo4j.integration.imperative.repositories.PersonWithNoConstructorRepository;
 import org.springframework.data.neo4j.integration.imperative.repositories.PersonWithWitherRepository;
 import org.springframework.data.neo4j.integration.imperative.repositories.ThingRepository;
-import org.springframework.data.neo4j.integration.shared.common.AltHobby;
-import org.springframework.data.neo4j.integration.shared.common.AltLikedByPersonRelationship;
-import org.springframework.data.neo4j.integration.shared.common.AltPerson;
-import org.springframework.data.neo4j.integration.shared.common.AnotherThingWithAssignedId;
-import org.springframework.data.neo4j.integration.shared.common.BidirectionalEnd;
-import org.springframework.data.neo4j.integration.shared.common.BidirectionalSameEntity;
-import org.springframework.data.neo4j.integration.shared.common.BidirectionalStart;
-import org.springframework.data.neo4j.integration.shared.common.Club;
-import org.springframework.data.neo4j.integration.shared.common.ClubRelationship;
-import org.springframework.data.neo4j.integration.shared.common.DeepRelationships;
-import org.springframework.data.neo4j.integration.shared.common.DtoPersonProjection;
-import org.springframework.data.neo4j.integration.shared.common.DtoPersonProjectionContainingAdditionalFields;
-import org.springframework.data.neo4j.integration.shared.common.EntitiesWithDynamicLabels;
-import org.springframework.data.neo4j.integration.shared.common.EntityWithConvertedId;
-import org.springframework.data.neo4j.integration.shared.common.EntityWithRelationshipPropertiesPath;
-import org.springframework.data.neo4j.integration.shared.common.ExtendedParentNode;
-import org.springframework.data.neo4j.integration.shared.common.Friend;
-import org.springframework.data.neo4j.integration.shared.common.FriendshipRelationship;
-import org.springframework.data.neo4j.integration.shared.common.Hobby;
-import org.springframework.data.neo4j.integration.shared.common.ImmutablePerson;
-import org.springframework.data.neo4j.integration.shared.common.Inheritance;
-import org.springframework.data.neo4j.integration.shared.common.KotlinPerson;
-import org.springframework.data.neo4j.integration.shared.common.LikesHobbyRelationship;
-import org.springframework.data.neo4j.integration.shared.common.MultipleLabels;
-import org.springframework.data.neo4j.integration.shared.common.ParentNode;
-import org.springframework.data.neo4j.integration.shared.common.Person;
-import org.springframework.data.neo4j.integration.shared.common.PersonWithAllConstructor;
-import org.springframework.data.neo4j.integration.shared.common.PersonWithNoConstructor;
-import org.springframework.data.neo4j.integration.shared.common.PersonWithRelationship;
-import org.springframework.data.neo4j.integration.shared.common.PersonWithRelationshipWithProperties;
-import org.springframework.data.neo4j.integration.shared.common.PersonWithRelationshipWithProperties2;
-import org.springframework.data.neo4j.integration.shared.common.PersonWithWither;
-import org.springframework.data.neo4j.integration.shared.common.Pet;
-import org.springframework.data.neo4j.integration.shared.common.SameIdProperty;
-import org.springframework.data.neo4j.integration.shared.common.SimilarThing;
-import org.springframework.data.neo4j.integration.shared.common.SimpleEntityWithRelationshipA;
-import org.springframework.data.neo4j.integration.shared.common.SimplePerson;
-import org.springframework.data.neo4j.integration.shared.common.ThingWithAssignedId;
-import org.springframework.data.neo4j.integration.shared.common.ThingWithFixedGeneratedId;
-import org.springframework.data.neo4j.integration.shared.common.WorksInClubRelationship;
+import org.springframework.data.neo4j.integration.shared.common.*;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
 import org.springframework.data.neo4j.repository.query.BoundingBox;
@@ -3530,6 +3491,23 @@ class RepositoryIT {
 				assertThat(session.run("MATCH (n:X) return n").list()).hasSize(1);
 			}
 		}
+
+		@Test
+		void multiInheritanceWithImmutableLombock(
+				@Autowired ImmutableInheritedBaseThingRepository<ImmutableInheritedBaseThing> repository
+		) {
+
+			try (Session session = createSession()) {
+				session.run("CREATE (:ImmutableInheritedThing:ImmutableInheritedBaseThing {name:'name 1', foo: 'foo'}),"
+						+ " (:ImmutableInheritedThing:ImmutableInheritedBaseThing:ImmutableInheritedThingLevel2 {name:'name 2', foo: 'foo', bar: 'bar'})")
+						.consume();
+			}
+
+			List<?> result = repository.findAll();
+
+			assertThat(result).hasSize(2);
+
+		}
 	}
 
 	@Nested
@@ -4002,6 +3980,8 @@ class RepositoryIT {
 	interface LoopingRelationshipRepository extends Neo4jRepository<DeepRelationships.LoopingType1, Long> {}
 
 	interface ImmutablePersonRepository extends Neo4jRepository<ImmutablePerson, String> {}
+
+	interface ImmutableInheritedBaseThingRepository<T extends ImmutableInheritedBaseThing> extends Neo4jRepository<T, Long> {}
 
 	interface MultipleLabelRepository extends Neo4jRepository<MultipleLabels.MultipleLabelsEntity, Long> {}
 
