@@ -51,15 +51,17 @@ import org.springframework.data.neo4j.core.DatabaseSelectionProvider;
 import org.springframework.data.neo4j.core.Neo4jTemplate;
 import org.springframework.data.neo4j.core.transaction.Neo4jBookmarkManager;
 import org.springframework.data.neo4j.core.transaction.Neo4jTransactionManager;
-import org.springframework.data.neo4j.integration.shared.common.Person;
-import org.springframework.data.neo4j.integration.shared.common.PersonWithAllConstructor;
+import org.springframework.data.neo4j.integration.shared.common.*;
+import org.springframework.data.neo4j.integration.shared.common.complex.BaseNodeEntity;
 import org.springframework.data.neo4j.integration.shared.common.PersonWithAssignedId;
-import org.springframework.data.neo4j.integration.shared.common.ThingWithGeneratedId;
+import org.springframework.data.neo4j.integration.shared.common.complex.NodeEntity;
+import org.springframework.data.neo4j.integration.shared.common.complex.projections.NodeWithDefinedCredentials;
+import org.springframework.data.neo4j.repository.Neo4jRepository;
+import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
 import org.springframework.data.neo4j.test.BookmarkCapture;
 import org.springframework.data.neo4j.test.Neo4jExtension.Neo4jConnectionSupport;
 import org.springframework.data.neo4j.test.Neo4jIntegrationTest;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * @author Gerrit Meier
@@ -111,6 +113,14 @@ class Neo4jTemplateIT {
 			transaction.run("CREATE (p:Person{firstName: 'Bela', lastName: 'B.'})");
 			transaction.run("CREATE (p:PersonWithAssignedId{id: 'x', firstName: 'John', lastName: 'Doe'})");
 
+			transaction.run(
+					"CREATE (root:NodeEntity:BaseNodeEntity{nodeId: 'root'})\n" +
+							"CREATE (company:NodeEntity:BaseNodeEntity{nodeId: 'comp'})\n" +
+							"CREATE (cred:Credential{id: 'uuid-1', name: 'Creds'})\n" +
+							"CREATE (company)-[:CHILD_OF]->(root)\n" +
+							"CREATE (root)-[:HAS_CREDENTIAL]->(cred)\n" +
+							"CREATE (company)-[:WITH_CREDENTIAL]->(cred)\n" +
+							"\n");
 			transaction.commit();
 			bookmarkCapture.seedWith(session.lastBookmark());
 		}
@@ -698,6 +708,21 @@ class Neo4jTemplateIT {
 		assertThat(people).allMatch(p -> p.getAddress() != null);
 	}
 
+
+	@Test
+	void saveWithProjectionImplementedByEntity(@Autowired BaseNodeRepository<BaseNodeEntity> baseNodeRepository) {
+
+		NodeWithDefinedCredentials rootProjection = baseNodeRepository.findByNodeId("root", NodeWithDefinedCredentials.class);
+		neo4jTemplate.saveAs(rootProjection, NodeWithDefinedCredentials.class);
+
+		NodeEntity rootNode = baseNodeRepository.findByNodeId(rootProjection.getNodeId(), NodeEntity.class);
+		assertThat(rootNode.getChildren()).hasSize(1);
+	}
+
+	interface BaseNodeRepository<T extends BaseNodeEntity> extends Neo4jRepository<T, String> {
+		<R> R findByNodeId(String nodeId, Class<R> clazz);
+	}
+
 	@Test
 	void updatingFindShouldWork() {
 		Map<String, Object> params = new HashMap<>();
@@ -800,7 +825,7 @@ class Neo4jTemplateIT {
 	}
 
 	@Configuration
-	@EnableTransactionManagement
+	@EnableNeo4jRepositories(considerNestedRepositories = true)
 	static class Config extends AbstractNeo4jConfig {
 
 		@Bean
