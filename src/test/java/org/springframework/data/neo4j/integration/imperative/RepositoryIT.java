@@ -140,6 +140,8 @@ import org.springframework.data.neo4j.integration.shared.common.SimplePerson;
 import org.springframework.data.neo4j.integration.shared.common.ThingWithAssignedId;
 import org.springframework.data.neo4j.integration.shared.common.ThingWithFixedGeneratedId;
 import org.springframework.data.neo4j.integration.shared.common.WorksInClubRelationship;
+import org.springframework.data.neo4j.integration.shared.common.complex.BaseNodeEntity;
+import org.springframework.data.neo4j.integration.shared.common.complex.NodeEntity;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
 import org.springframework.data.neo4j.repository.query.BoundingBox;
@@ -4072,6 +4074,17 @@ class RepositoryIT {
 			assertThat(((Inheritance.ExtendingBaseClassWithRelationshipProperties) all.get(0)).getThings())
 					.containsExactlyInAnyOrder(relCcA, relCcB1);
 		}
+
+		@Test
+		void queryConcreteEntity(@Autowired BaseNodeRepository<NodeEntity> baseNodeRepository) {
+			doWithSession(session -> session.run("CREATE (root:NodeEntity:BaseNodeEntity{nodeId: 'root'})\n" +
+					"CREATE (company:NodeEntity:BaseNodeEntity{nodeId: 'comp'})\n" +
+					"CREATE (company)-[:CHILD_OF]->(root)\n" +
+					"\n").consume());
+
+			assertThat( baseNodeRepository.findByNodeId("root", NodeEntity.class))
+					.isPresent();
+		}
 	}
 
 	@Nested
@@ -4491,6 +4504,10 @@ class RepositoryIT {
 
 	interface EntityWithCustomIdAndDynamicLabelsRepository
 			extends Neo4jRepository<EntitiesWithDynamicLabels.EntityWithCustomIdAndDynamicLabels, String> {}
+
+	interface BaseNodeRepository<T extends BaseNodeEntity> extends Neo4jRepository<T, String> {
+		<R> Optional<R> findByNodeId(String nodeId, Class<R> clazz);
+	}
 
 	@SpringJUnitConfig(Config.class)
 	static abstract class IntegrationTestBase {
