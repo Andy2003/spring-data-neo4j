@@ -94,6 +94,9 @@ import org.springframework.data.neo4j.integration.imperative.repositories.Person
 import org.springframework.data.neo4j.integration.imperative.repositories.PersonWithNoConstructorRepository;
 import org.springframework.data.neo4j.integration.imperative.repositories.PersonWithWitherRepository;
 import org.springframework.data.neo4j.integration.imperative.repositories.ThingRepository;
+import org.springframework.data.neo4j.integration.issues.gh2421.BaseNodeEntity;
+import org.springframework.data.neo4j.integration.issues.gh2421.MeasurementMeta;
+import org.springframework.data.neo4j.integration.issues.gh2421.projections.ApiMeasurementMetaProjection;
 import org.springframework.data.neo4j.integration.shared.common.AltHobby;
 import org.springframework.data.neo4j.integration.shared.common.AltLikedByPersonRelationship;
 import org.springframework.data.neo4j.integration.shared.common.AltPerson;
@@ -148,6 +151,8 @@ import org.springframework.data.neo4j.test.BookmarkCapture;
 import org.springframework.data.neo4j.test.Neo4jExtension;
 import org.springframework.data.neo4j.types.CartesianPoint2d;
 import org.springframework.data.neo4j.types.GeographicPoint2d;
+import org.springframework.data.projection.TargetAware;
+import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.FluentQuery;
 import org.springframework.data.repository.query.Param;
 import org.springframework.test.annotation.DirtiesContext;
@@ -3054,6 +3059,16 @@ class RepositoryIT {
 					true, 1L, TEST_PERSON1_BORN_ON, "something", Arrays.asList("a", "b"), NEO4J_HQ, createdAt.toInstant());
 			person2 = new PersonWithAllConstructor(id2, TEST_PERSON2_NAME, TEST_PERSON2_FIRST_NAME, TEST_PERSON_SAMEVALUE,
 					false, 2L, TEST_PERSON2_BORN_ON, null, Collections.emptyList(), SFO, null);
+
+			transaction.run("" +
+					"CREATE (parent:NodeEntity:BaseNodeEntity{nodeId: 'parent'}) "+
+					"CREATE (m1:MeasurementMeta:BaseNodeEntity{nodeId: 'm1'}) "+
+					"CREATE (nt1:NodeType{nodeTypeId: 'nt1'}) "+
+					"CREATE (nt2:NodeType{nodeTypeId: 'nt2'}) "+
+					"CREATE (parent)-[:HAS_TYPE]->(nt1)" +
+					"CREATE (m1)-[:HAS_TYPE]->(nt2)" +
+					"CREATE (m1)-[:CHILD_OF]->(parent)"
+			);
 		}
 
 		@Test
@@ -3389,6 +3404,19 @@ class RepositoryIT {
 			boolean exists = repository.existsById(id1);
 			assertThat(exists).isTrue();
 		}
+
+		@Test
+		void test(@Autowired MeasurementMetaRepository repository) {
+			Optional<ApiMeasurementMetaProjection> m1 = repository.findByNodeId("m1", ApiMeasurementMetaProjection.class);
+			assertThat(m1)
+					.isPresent()
+					.get()
+					.extracting(projection -> (MeasurementMeta) ((TargetAware)projection).getTarget())
+					.extracting(BaseNodeEntity::getParent)
+					.extracting(BaseNodeEntity::getNodeType)
+					.isNull();
+		}
+
 
 		@Test // GH-2033
 		void existsByProperty(@Autowired PersonRepository repository) {
@@ -4492,6 +4520,10 @@ class RepositoryIT {
 	interface EntityWithCustomIdAndDynamicLabelsRepository
 			extends Neo4jRepository<EntitiesWithDynamicLabels.EntityWithCustomIdAndDynamicLabels, String> {}
 
+	interface MeasurementMetaRepository extends Repository<MeasurementMeta, String> {
+		<R> Optional<R> findByNodeId(String nodeId, Class<R> clazz);
+	}
+
 	@SpringJUnitConfig(Config.class)
 	static abstract class IntegrationTestBase {
 
@@ -4544,7 +4576,8 @@ class RepositoryIT {
 		protected Collection<String> getMappingBasePackages() {
 			return Arrays.asList(
 					PersonWithAllConstructor.class.getPackage().getName(),
-					Flight.class.getPackage().getName()
+					Flight.class.getPackage().getName(),
+					MeasurementMeta.class.getPackage().getName()
 			);
 		}
 
