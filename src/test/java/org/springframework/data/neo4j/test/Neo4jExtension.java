@@ -283,7 +283,7 @@ public class Neo4jExtension implements BeforeAllCallback, BeforeEachCallback {
 
 		private final String repository = Optional.ofNullable(System.getenv(SYS_PROPERTY_NEO4J_REPOSITORY)).orElse("neo4j");
 
-		private final String imageVersion = Optional.ofNullable(System.getenv(SYS_PROPERTY_NEO4J_VERSION)).orElse("4.2");
+		private final String imageVersion = Optional.ofNullable(System.getenv(SYS_PROPERTY_NEO4J_VERSION)).orElse("4.3");
 
 		private final boolean containerReuseSupported = TestcontainersConfiguration
 				.getInstance().environmentSupportsReuse();
