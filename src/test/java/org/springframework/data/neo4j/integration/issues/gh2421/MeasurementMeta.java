@@ -11,5 +11,5 @@ import org.springframework.data.neo4j.integration.issues.gh2421.projections.Base
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuperBuilder(toBuilder = true)
-public class MeasurementMeta extends BaseNodeEntity implements BaseNodeFieldsProjection {
+public class MeasurementMeta extends BaseNodeEntity {
 }

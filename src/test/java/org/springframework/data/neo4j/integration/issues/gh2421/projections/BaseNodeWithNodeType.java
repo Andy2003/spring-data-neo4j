@@ -1,9 +1,0 @@
-package org.springframework.data.neo4j.integration.issues.gh2421.projections;
-
-
-import org.springframework.data.neo4j.integration.issues.gh2421.NodeType;
-
-public interface BaseNodeWithNodeType {
-
-	NodeType getNodeType();
-}

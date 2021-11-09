@@ -97,7 +97,6 @@ import org.springframework.data.neo4j.integration.imperative.repositories.ThingR
 import org.springframework.data.neo4j.integration.issues.gh2421.BaseNodeEntity;
 import org.springframework.data.neo4j.integration.issues.gh2421.MeasurementMeta;
 import org.springframework.data.neo4j.integration.issues.gh2421.projections.ApiMeasurementMetaProjection;
-import org.springframework.data.neo4j.integration.issues.gh2421.projections.BaseNodeWithNodeType;
 import org.springframework.data.neo4j.integration.shared.common.AltHobby;
 import org.springframework.data.neo4j.integration.shared.common.AltLikedByPersonRelationship;
 import org.springframework.data.neo4j.integration.shared.common.AltPerson;
@@ -3417,18 +3416,6 @@ class RepositoryIT {
 					.extracting(BaseNodeEntity::getNodeType)
 					.isNull();
 		}
-
-		@Test
-		void test2(@Autowired MeasurementMetaRepository repository) {
-			Optional<BaseNodeWithNodeType> m1 = repository.findByNodeId("m1", BaseNodeWithNodeType.class);
-			assertThat(m1)
-					.isPresent()
-					.get()
-					.extracting(projection -> (MeasurementMeta) projection)
-					.extracting(BaseNodeEntity::getParent)
-					.isNull();
-		}
-
 
 		@Test // GH-2033
 		void existsByProperty(@Autowired PersonRepository repository) {

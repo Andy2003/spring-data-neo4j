@@ -8,10 +8,6 @@ import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Relationship;
 import org.springframework.data.neo4j.core.support.UUIDStringGenerator;
-import org.springframework.data.neo4j.integration.issues.gh2421.projections.ApiBaseNodeProjection;
-import org.springframework.data.neo4j.integration.issues.gh2421.projections.BaseNodeFieldsProjection;
-import org.springframework.data.neo4j.integration.issues.gh2421.projections.BaseNodeWithNodeType;
-import org.springframework.data.neo4j.integration.issues.gh2421.projections.BaseNodeWithParent;
 
 import static org.springframework.data.neo4j.core.schema.Relationship.Direction.OUTGOING;
 
@@ -22,12 +18,7 @@ import static org.springframework.data.neo4j.core.schema.Relationship.Direction.
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @SuperBuilder(toBuilder = true)
-public class BaseNodeEntity implements
-		BaseNodeFieldsProjection,
-		BaseNodeWithParent,
-		BaseNodeWithNodeType,
-
-		ApiBaseNodeProjection {
+public class BaseNodeEntity {
 
 	@Id
 	@GeneratedValue(UUIDStringGenerator.class)
